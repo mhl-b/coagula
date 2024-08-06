@@ -2,6 +2,8 @@ use core::ops::{Add, AddAssign, Mul, Sub};
 
 use libm::roundf;
 
+// https://www.redblobgames.com/grids/hexagons/
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Hex {
     q: i32,
@@ -10,7 +12,7 @@ pub struct Hex {
 
 pub type Direction = usize;
 
-pub const HEX0: Hex = hex(0,0);
+pub const HEX0: Hex = hex(0, 0);
 
 // counter-clock q-axis
 pub const HEX_DIRECTIONS: [Hex; 6] = [
@@ -59,11 +61,15 @@ impl Hex {
         HEX_DIRECTIONS[d]
     }
 
+    pub fn tof(&self) -> FHex {
+        fhex(self.q() as f32, self.r() as f32)
+    }
+
     pub fn neighbor(self, d: Direction) -> Hex {
         self + Hex::direction(d)
     }
 
-    pub fn neighbors(self) -> impl Iterator<Item = Hex> {
+    pub fn neighbors(self) -> impl Iterator<Item=Hex> {
         (0..6).map(move |d| self.neighbor(d))
     }
 
@@ -123,6 +129,10 @@ impl Mul<i32> for Hex {
 pub struct FHex {
     q: f32,
     r: f32,
+}
+
+pub fn fhex(q: f32, r: f32) -> FHex {
+    FHex { q, r }
 }
 
 impl FHex {
@@ -198,7 +208,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
 
 #[cfg(test)]
 mod test {
-    use crate::geometry::{hex, FHex, Hex};
+    use crate::geometry::{FHex, hex};
 
     #[test]
     fn hex_add() {
@@ -225,7 +235,7 @@ mod test {
 
     #[test]
     fn fhex_mul() {
-        assert_eq!(FHex::ax(2.1 * 5., 1.3 * 5.), FHex::ax(2.1, 1.3,) * 5.)
+        assert_eq!(FHex::ax(2.1 * 5., 1.3 * 5.), FHex::ax(2.1, 1.3) * 5.)
     }
 
     #[test]

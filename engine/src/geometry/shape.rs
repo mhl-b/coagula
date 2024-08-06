@@ -11,7 +11,7 @@ pub trait Shape {
     fn center(&self) -> Hex;
 
     /// given fractional hex position returns most relevant center hex
-    fn nearest_center(hex: FHex) -> Hex;
+    fn nearest_center(&self, hex: FHex) -> Hex;
 
     /// number of tiles in the shape
     fn area(&self) -> usize;

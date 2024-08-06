@@ -1,22 +1,31 @@
 use core::iter;
 
-use super::{Direction, Hex, Shape};
+use super::{Direction, FHex, Hex, Shape};
 
 pub struct Point {
     hex: Hex,
 }
 
-impl Shape for Point {
+impl Point {
+    pub fn new(hex: Hex) -> Point {
+        Point { hex }
+    }
+}
 
+impl Shape for Point {
     fn center(&self) -> Hex {
         self.hex
+    }
+
+    fn nearest_center(&self, hex: FHex) -> Hex {
+        hex.round()
     }
 
     fn area(&self) -> usize {
         1
     }
 
-    fn hex_iter(&self) -> impl Iterator<Item = Hex> {
+    fn hex_iter(&self) -> impl Iterator<Item=Hex> {
         iter::once(self.hex)
     }
 
@@ -44,11 +53,11 @@ impl Shape for Point {
         Point { hex }
     }
 
-    fn all_neighbors(&self) -> impl Iterator<Item = Hex> {
+    fn all_neighbors(&self) -> impl Iterator<Item=Hex> {
         self.hex.neighbors()
     }
 
-    fn direction_neighbors(&self, d: Direction) -> impl Iterator<Item = Hex> {
+    fn direction_neighbors(&self, d: Direction) -> impl Iterator<Item=Hex> {
         iter::once(self.hex.neighbor(d))
     }
 }

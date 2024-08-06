@@ -1,9 +1,9 @@
 mod hex;
 mod shape;
 mod point;
-mod point3;
+mod tri;
 
 pub use hex::*;
 pub use shape::*;
 pub use point::*;
-pub use point3::*;
+pub use tri::*;
