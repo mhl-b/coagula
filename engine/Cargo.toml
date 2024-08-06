@@ -1,0 +1,11 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+no-panic = "0.1.30"
+libm = "0.2.8"
+
+[profile.release]
+lto = "thin"
