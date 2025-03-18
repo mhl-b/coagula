@@ -1,0 +1,11 @@
+[package]
+name = "coagula-sdl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[dependencies.sdl2]
+version = "0.37"
+default-features = false
+features = ["bundled","static-link"]
