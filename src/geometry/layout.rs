@@ -1,7 +1,6 @@
 use super::*;
-use std::fmt::Debug;
-use std::ops::{Add, Div, Mul, Sub};
 use sdl2::rect::FPoint;
+use std::fmt::Debug;
 
 const SQRT_3: f32 = 1.7320509;
 
@@ -64,15 +63,28 @@ pub struct Layout {
     orientation: Orientation,
     size: FPoint,
     origin: FPoint,
+    offsets: [FPoint; 6],
 }
 
 impl Layout {
-    pub const fn new(orientation: Orientation, size: FPoint, origin: FPoint) -> Self {
+    pub fn new(orientation: Orientation, size: FPoint, origin: FPoint) -> Self {
+        let offsets = Self::init_offsets(orientation, size);
         Self {
             orientation,
             size,
             origin,
+            offsets,
         }
+    }
+
+    fn init_offsets(orientation: Orientation, size: FPoint) -> [FPoint; 6] {
+        let mut offsets = [FPoint::new(0., 0.); 6];
+        (0..6).for_each(|i| {
+            let angle = 2.0 * core::f32::consts::PI * (orientation.start_angle + i as f32) / 6.0;
+            let (s, c) = angle.sin_cos();
+            offsets[i] = FPoint::new(size.x() * c, size.y() * s);
+        });
+        offsets
     }
 
     pub fn get_origin(&self) -> FPoint {
@@ -106,7 +118,7 @@ impl Layout {
         let l = self;
         let m = l.orientation;
         let pt = p - self.origin;
-        let ptl = FPoint::new(pt.x()/l.size.x(), pt.y()/l.size.y());
+        let ptl = FPoint::new(pt.x() / l.size.x(), pt.y() / l.size.y());
         let q = m.b0 * ptl.x() + m.b1 * ptl.y();
         let r = m.b2 * ptl.x() + m.b3 * ptl.y();
         FHex(q, r)
@@ -116,14 +128,6 @@ impl Layout {
         self.point_to_fhex(p).round()
     }
 
-    pub fn hex_corner_offset(&self, corner: usize) -> FPoint {
-        assert!(corner < 6);
-        let angle =
-            2.0 * core::f32::consts::PI * (self.orientation.start_angle + corner as f32) / 6.0;
-        let (s, c) = angle.sin_cos();
-        FPoint::new(self.size.x() * c, self.size.y() * s)
-    }
-
     pub fn hex_centers(&self, hexes: impl Iterator<Item = IHex>) -> impl Iterator<Item = FPoint> {
         hexes.map(|h| self.hex_to_pxl(h))
     }
@@ -131,7 +135,7 @@ impl Layout {
     pub fn grid_corners(&self, c: FPoint) -> [FPoint; 6] {
         let mut corners = [FPoint::new(0., 0.); 6];
         (0..6).for_each(|i| {
-            corners[i] = self.hex_corner_offset(i) + c;
+            corners[i] = self.offsets[i] + c;
         });
         corners
     }
