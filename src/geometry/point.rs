@@ -9,10 +9,6 @@ impl Shape for Point {
         self.0
     }
 
-    fn nearest_center(&self, hex: FHex) -> IHex {
-        hex.round()
-    }
-
     fn area(&self) -> usize {
         1
     }
@@ -38,7 +34,7 @@ impl Shape for Point {
     }
 
     fn all_neighbors(&self) -> impl Iterator<Item = IHex> {
-        self.0.neighbors().into_iter()
+        self.0.neighbors()
     }
 
     fn direction_neighbors(&self, d: HexDir) -> impl Iterator<Item = IHex> {

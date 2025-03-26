@@ -9,9 +9,6 @@ pub trait Shape {
     /// an approximate center of the shape
     fn center(&self) -> IHex;
 
-    /// given fractional hex position returns most relevant center hex
-    fn nearest_center(&self, hex: FHex) -> IHex;
-
     /// number of tiles in the shape
     fn area(&self) -> usize;
 
@@ -35,9 +32,4 @@ pub trait Shape {
 
     /// iterator of neighboring hexes in given direction
     fn direction_neighbors(&self, d: HexDir) -> impl Iterator<Item = IHex>;
-}
-
-pub trait Overlap<S: Shape> {
-    fn overlap_iter(&self, other: &S) -> impl Iterator<Item = IHex>;
-    fn overlaps(&self, other: &S) -> bool;
 }

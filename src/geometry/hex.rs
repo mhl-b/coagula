@@ -64,15 +64,18 @@ impl From<HexDir> for IHex {
 }
 
 impl IHex {
-    pub fn q(&self) -> i32 {
+    #[inline]
+    pub const fn q(&self) -> i32 {
         self.0
     }
 
-    pub fn r(&self) -> i32 {
+    #[inline]
+    pub const fn r(&self) -> i32 {
         self.1
     }
 
-    pub fn s(&self) -> i32 {
+    #[inline]
+    pub const fn s(&self) -> i32 {
         -self.0 - self.1
     }
 
@@ -91,30 +94,21 @@ impl IHex {
         )
     }
 
-    pub fn line(&self, other: IHex, out: &mut [IHex]) -> usize {
-        let dist = self.distance(other) as usize;
-        assert!(dist < out.len());
-        let step = 1.0 / (dist.max(1) as f32);
-        (0..=dist).for_each(|i| {
-            unsafe { *out.get_unchecked_mut(i) = self.lerp(other, step * (i as f32)).round() };
-        });
-        dist
-    }
-
-    pub fn line_vec(self, other: IHex) -> Vec<IHex> {
+    pub fn nlerp(self, other: IHex, n: usize) -> IHex {
         let dist = self.distance(other);
         let step = 1.0 / (dist.max(1) as f32);
-        (0..=dist)
-            .map(|i| self.lerp(other, step * (i as f32)).round())
-            .collect()
+        self.lerp(other, step * (n as f32)).round()
     }
 
-    pub fn neighbors(self) -> [IHex; 6] {
-        let mut out = [IHEX_0; 6];
-        for i in 0..6 {
-            out[i] = self + IHex::from(ALL_DIR[i]);
-        }
-        out
+    pub fn line(self, other: IHex) -> impl Iterator<Item = IHex> {
+        let dist = self.distance(other);
+        let step = 1.0 / (dist.max(1) as f32);
+        (0..=dist).map(move |i| self.lerp(other, step * (i as f32)).round())
+    }
+
+    pub fn neighbors(self) -> impl Iterator<Item = IHex> {
+        let hex = self;
+        ALL_DIR.iter().map(move |&n| hex + IHex::from(n))
     }
 }
 
@@ -167,9 +161,9 @@ impl FHex {
         let mut q = self.q().round();
         let mut r = self.r().round();
         let s = self.s().round();
-        let dq = q - self.q();
-        let dr = r - self.r();
-        let ds = s - self.s();
+        let dq = (q - self.q()).abs();
+        let dr = (r - self.r()).abs();
+        let ds = (s - self.s()).abs();
         if dq > dr && dq > ds {
             q = -r - s;
         } else if dr > ds {
@@ -255,9 +249,8 @@ mod test {
 
     #[test]
     fn hex_line() {
-        let want = [IHex(-2, -1), IHex(-2, 0), IHex(-1, 0), IHex(-1, 1)];
-        let mut got = [IHex(0, 0); 4];
-        IHex(-2, -1).line(IHex(-1, 1), &mut got);
+        let want = vec![IHex(-2, -1), IHex(-2, 0), IHex(-1, 0), IHex(-1, 1)];
+        let got = IHex(-2, -1).line(IHex(-1, 1)).collect::<Vec<IHex>>();
         assert_eq!(&want, &got);
     }
 }

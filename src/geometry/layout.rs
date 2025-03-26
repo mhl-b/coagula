@@ -1,8 +1,7 @@
 use super::*;
 use std::fmt::Debug;
 use std::ops::{Add, Div, Mul, Sub};
-
-use super::Shape;
+use sdl2::rect::FPoint;
 
 const SQRT_3: f32 = 1.7320509;
 
@@ -63,12 +62,12 @@ pub const ORIENTATION_POINTY: Orientation = Orientation {
 #[derive(Debug, Clone, Copy)]
 pub struct Layout {
     orientation: Orientation,
-    size: Pxl,
-    origin: Pxl,
+    size: FPoint,
+    origin: FPoint,
 }
 
 impl Layout {
-    pub const fn new(orientation: Orientation, size: Pxl, origin: Pxl) -> Self {
+    pub const fn new(orientation: Orientation, size: FPoint, origin: FPoint) -> Self {
         Self {
             orientation,
             size,
@@ -76,115 +75,64 @@ impl Layout {
         }
     }
 
-    pub fn get_origin(&self) -> Pxl {
+    pub fn get_origin(&self) -> FPoint {
         self.origin
     }
 
-    pub fn get_size(&self) -> Pxl {
+    pub fn get_size(&self) -> FPoint {
         self.size
     }
 
-    pub fn set_size(&mut self, size: Pxl) {
+    pub fn set_size(&mut self, size: FPoint) {
         self.size = size;
     }
 
-    pub fn set_origin(&mut self, origin: Pxl) {
+    pub fn set_origin(&mut self, origin: FPoint) {
         self.origin = origin;
     }
 
-    pub fn hex_to_pxl(&self, h: IHex) -> Pxl {
+    pub fn hex_to_pxl(&self, h: IHex) -> FPoint {
         self.fhex_to_point(h.into())
     }
 
-    pub fn fhex_to_point(&self, h: FHex) -> Pxl {
+    pub fn fhex_to_point(&self, h: FHex) -> FPoint {
         let m = &self.orientation;
         let x = (m.f0 * h.q() + m.f1 * h.r()) * self.size.x();
         let y = (m.f2 * h.q() + m.f3 * h.r()) * self.size.y();
-        Pxl(x, y) + self.origin
+        FPoint::new(x, y) + self.origin
     }
 
-    pub fn point_to_fhex(&self, p: Pxl) -> FHex {
+    pub fn point_to_fhex(&self, p: FPoint) -> FHex {
         let l = self;
         let m = l.orientation;
-        let pt = (p - self.origin) / l.size;
-        let q = m.b0 * pt.x() + m.b1 * pt.y();
-        let r = m.b2 * pt.x() + m.b3 * pt.y();
+        let pt = p - self.origin;
+        let ptl = FPoint::new(pt.x()/l.size.x(), pt.y()/l.size.y());
+        let q = m.b0 * ptl.x() + m.b1 * ptl.y();
+        let r = m.b2 * ptl.x() + m.b3 * ptl.y();
         FHex(q, r)
     }
 
-    pub fn point_to_hex(&self, p: Pxl) -> IHex {
+    pub fn point_to_hex(&self, p: FPoint) -> IHex {
         self.point_to_fhex(p).round()
     }
 
-    pub fn hex_corner_offset(&mut self, corner: usize) -> Pxl {
+    pub fn hex_corner_offset(&self, corner: usize) -> FPoint {
         assert!(corner < 6);
         let angle =
             2.0 * core::f32::consts::PI * (self.orientation.start_angle + corner as f32) / 6.0;
         let (s, c) = angle.sin_cos();
-        Pxl(self.size.x() * c, self.size.y() * s)
+        FPoint::new(self.size.x() * c, self.size.y() * s)
     }
 
-    pub fn hex_centers<T: Shape>(&mut self, hexes: T, centers: &mut [Pxl]) {
-        assert!(centers.len() >= hexes.area());
-        hexes
-            .hex_iter()
-            .enumerate()
-            .for_each(|(i, h)| centers[i] = self.hex_to_pxl(h));
+    pub fn hex_centers(&self, hexes: impl Iterator<Item = IHex>) -> impl Iterator<Item = FPoint> {
+        hexes.map(|h| self.hex_to_pxl(h))
     }
 
-    pub fn grid_corners(&mut self, centers: &[Pxl], corners: &mut [Pxl]) {
-        assert!(corners.len() >= centers.len() * 6);
-        centers.iter().enumerate().for_each(|(i, c)| {
-            for j in 0..6 {
-                let off = self.hex_corner_offset(j);
-                corners[i * 6 + j] = *c + off;
-            }
+    pub fn grid_corners(&self, c: FPoint) -> [FPoint; 6] {
+        let mut corners = [FPoint::new(0., 0.); 6];
+        (0..6).for_each(|i| {
+            corners[i] = self.hex_corner_offset(i) + c;
         });
-    }
-}
-
-pub const PXL_0: Pxl = Pxl(0., 0.);
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Pxl(pub f32, pub f32);
-
-impl Pxl {
-    pub fn x(&self) -> f32 {
-        self.0
-    }
-    pub fn y(&self) -> f32 {
-        self.1
-    }
-}
-
-impl Add for Pxl {
-    type Output = Pxl;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Pxl(self.0 + rhs.0, self.1 + rhs.1)
-    }
-}
-
-impl Sub for Pxl {
-    type Output = Pxl;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Pxl(self.0 - rhs.0, self.1 - rhs.1)
-    }
-}
-
-impl Mul for Pxl {
-    type Output = Pxl;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Pxl(self.0 * rhs.0, self.1 * rhs.1)
-    }
-}
-
-impl Div for Pxl {
-    type Output = Pxl;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        Pxl(self.0 / rhs.0, self.1 / rhs.1)
+        corners
     }
 }
